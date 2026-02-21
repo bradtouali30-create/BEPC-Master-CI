@@ -1,0 +1,2120 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0A1628">
+<meta name="description" content="BEPC MASTER CI - Application de préparation au BEPC pour les élèves de 3e en Côte d'Ivoire">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>BEPC MASTER CI</title>
+<link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ========== RESET & VARIABLES ========== */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #060D1A;
+    --surface: #0D1B2E;
+    --surface2: #122238;
+    --border: #1E3352;
+    --accent: #F5A623;
+    --accent2: #00D4AA;
+    --accent3: #FF6B6B;
+    --blue: #3B8BEB;
+    --text: #E8F0FE;
+    --text2: #8BA4C0;
+    --math: #F5A623;
+    --phys: #3B8BEB;
+    --svt: #00D4AA;
+    --fr: #FF6B6B;
+    --en: #A78BFA;
+    --hg: #FB923C;
+    --edhc: #34D399;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --shadow: 0 8px 32px rgba(0,0,0,0.4);
+    --font: 'Sora', sans-serif;
+    --mono: 'Space Mono', monospace;
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ========== APP SHELL ========== */
+  #app {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    max-width: 430px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* ========== SCREENS ========== */
+  .screen {
+    display: none;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+    animation: fadeIn 0.3s ease;
+  }
+  .screen.active { display: flex; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ========== SCROLLABLE CONTENT ========== */
+  .scroll-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 16px 100px;
+    -webkit-overflow-scrolling: touch;
+  }
+  .scroll-content::-webkit-scrollbar { display: none; }
+
+  /* ========== TOP BAR ========== */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 16px 12px;
+    background: var(--bg);
+    position: relative;
+    z-index: 10;
+  }
+  .topbar h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.3px;
+  }
+  .topbar .back-btn {
+    width: 36px; height: 36px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    transition: background 0.2s;
+  }
+  .topbar .back-btn:active { background: var(--surface2); }
+
+  /* ========== BOTTOM NAV ========== */
+  .bottom-nav {
+    display: flex;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 8px 0 env(safe-area-inset-bottom, 8px);
+    position: relative;
+    z-index: 20;
+  }
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: none;
+    background: none;
+    color: var(--text2);
+  }
+  .nav-item.active { color: var(--accent); }
+  .nav-item .nav-icon { font-size: 22px; }
+  .nav-item .nav-label { font-size: 10px; font-weight: 600; letter-spacing: 0.3px; }
+
+  /* ========== HOME SCREEN ========== */
+  .home-header {
+    background: linear-gradient(135deg, #0D1B2E 0%, #122238 100%);
+    padding: 20px 16px 24px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+  .home-header::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: radial-gradient(circle, rgba(245,166,35,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .home-header::after {
+    content: '';
+    position: absolute;
+    bottom: -30px; left: -20px;
+    width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(0,212,170,0.1) 0%, transparent 70%);
+    border-radius: 50%;
+  }
+  .greeting {
+    font-size: 13px;
+    color: var(--text2);
+    margin-bottom: 4px;
+    font-weight: 400;
+  }
+  .home-title {
+    font-size: 24px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+  }
+  .home-title span { color: var(--accent); }
+
+  .xp-bar-wrap {
+    margin-top: 16px;
+    background: var(--bg);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    position: relative;
+    z-index: 1;
+  }
+  .xp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .xp-level { font-size: 12px; font-weight: 700; color: var(--accent); letter-spacing: 0.5px; }
+  .xp-pts { font-size: 12px; color: var(--text2); font-family: var(--mono); }
+  .xp-bar {
+    height: 8px;
+    background: var(--surface2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .xp-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), #FFD700);
+    border-radius: 999px;
+    transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Quick Stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin: 16px 0;
+  }
+  .stat-mini {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 10px;
+    text-align: center;
+  }
+  .stat-mini .val { font-size: 20px; font-weight: 800; color: var(--accent); font-family: var(--mono); }
+  .stat-mini .lbl { font-size: 10px; color: var(--text2); margin-top: 2px; font-weight: 600; }
+
+  /* Section titles */
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 20px 0 10px;
+  }
+
+  /* Module Cards */
+  .module-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .module-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 60%, rgba(255,255,255,0.03));
+  }
+  .module-card:active { transform: scale(0.98); background: var(--surface2); }
+  .module-icon {
+    width: 52px; height: 52px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 26px;
+    flex-shrink: 0;
+  }
+  .module-info { flex: 1; }
+  .module-name { font-size: 16px; font-weight: 700; margin-bottom: 3px; }
+  .module-desc { font-size: 12px; color: var(--text2); line-height: 1.4; }
+  .module-arrow { color: var(--text2); font-size: 18px; flex-shrink: 0; }
+
+  .mod-quiz .module-icon { background: rgba(245,166,35,0.15); }
+  .mod-redac .module-icon { background: rgba(59,139,235,0.15); }
+  .mod-exam .module-icon { background: rgba(255,107,107,0.15); }
+  .mod-stats .module-icon { background: rgba(0,212,170,0.15); }
+
+  /* ========== QUIZ SCREEN ========== */
+  .subject-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    padding: 16px 0;
+  }
+  .subject-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  .subject-card:active { transform: scale(0.96); }
+  .subject-icon { font-size: 28px; }
+  .subject-name { font-size: 14px; font-weight: 700; }
+  .subject-count { font-size: 11px; color: var(--text2); }
+  .subject-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    align-self: flex-end;
+    margin-top: auto;
+  }
+
+  /* ========== QUIZ QUESTION SCREEN ========== */
+  .quiz-header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+  .quiz-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .quiz-subject-tag {
+    font-size: 11px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    letter-spacing: 0.5px;
+  }
+  .quiz-timer {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .quiz-timer.warning { color: var(--accent3); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+  .progress-bar {
+    height: 4px;
+    background: var(--surface2);
+    border-radius: 999px;
+    overflow: hidden;
+  }
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--blue));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+  }
+  .progress-text { font-size: 11px; color: var(--text2); margin-top: 6px; text-align: right; }
+
+  .question-wrap {
+    padding: 20px 16px;
+  }
+  .question-text {
+    font-size: 16px;
+    font-weight: 600;
+    line-height: 1.6;
+    margin-bottom: 24px;
+    color: var(--text);
+  }
+
+  .options-list { display: flex; flex-direction: column; gap: 10px; }
+  .option-btn {
+    background: var(--surface);
+    border: 2px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: left;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.4;
+    width: 100%;
+  }
+  .option-btn:active { transform: scale(0.98); }
+  .option-letter {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: var(--surface2);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    font-size: 13px;
+    flex-shrink: 0;
+    font-family: var(--mono);
+  }
+  .option-btn.selected { border-color: var(--blue); background: rgba(59,139,235,0.1); }
+  .option-btn.selected .option-letter { background: var(--blue); }
+  .option-btn.correct { border-color: var(--accent2); background: rgba(0,212,170,0.1); }
+  .option-btn.correct .option-letter { background: var(--accent2); color: #000; }
+  .option-btn.wrong { border-color: var(--accent3); background: rgba(255,107,107,0.1); }
+  .option-btn.wrong .option-letter { background: var(--accent3); }
+  .option-btn:disabled { cursor: default; }
+
+  .explanation-box {
+    margin-top: 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent2);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    font-size: 13px;
+    line-height: 1.6;
+    color: var(--text2);
+    display: none;
+  }
+  .explanation-box.show { display: block; animation: fadeIn 0.3s ease; }
+  .explanation-box strong { color: var(--accent2); display: block; margin-bottom: 6px; }
+
+  .next-btn {
+    margin: 16px;
+    padding: 16px;
+    background: linear-gradient(135deg, var(--accent), #FFB84D);
+    border: none;
+    border-radius: var(--radius-sm);
+    color: #000;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    width: calc(100% - 32px);
+    transition: all 0.2s;
+    display: none;
+  }
+  .next-btn.show { display: block; animation: fadeIn 0.3s ease; }
+  .next-btn:active { transform: scale(0.98); }
+
+  /* ========== RESULTS SCREEN ========== */
+  .results-wrap {
+    padding: 20px 16px;
+    text-align: center;
+  }
+  .score-circle {
+    width: 140px; height: 140px;
+    border-radius: 50%;
+    margin: 0 auto 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .score-circle svg {
+    position: absolute;
+    top: 0; left: 0;
+    transform: rotate(-90deg);
+  }
+  .score-value {
+    font-size: 36px;
+    font-weight: 800;
+    font-family: var(--mono);
+    position: relative;
+    z-index: 1;
+  }
+  .score-max { font-size: 14px; color: var(--text2); position: relative; z-index: 1; }
+  .result-grade {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 6px;
+  }
+  .result-msg { font-size: 13px; color: var(--text2); margin-bottom: 24px; }
+  .result-details {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: left;
+  }
+  .result-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .result-row:last-child { border-bottom: none; }
+  .result-row .label { color: var(--text2); }
+  .result-row .val { font-weight: 700; font-family: var(--mono); }
+  .xp-earned { color: var(--accent); font-weight: 700; font-size: 18px; text-align: center; margin: 12px 0; }
+
+  .btn-primary, .btn-secondary {
+    width: 100%;
+    padding: 15px;
+    border-radius: var(--radius-sm);
+    border: none;
+    font-family: var(--font);
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-bottom: 10px;
+  }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), #FFB84D); color: #000; }
+  .btn-secondary { background: var(--surface); border: 1px solid var(--border); color: var(--text); }
+  .btn-primary:active, .btn-secondary:active { transform: scale(0.98); }
+
+  /* ========== REDACTION SCREEN ========== */
+  .redac-toolbar {
+    display: flex;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+  .redac-toolbar::-webkit-scrollbar { display: none; }
+  .tool-chip {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+  .tool-chip.active { background: var(--accent); color: #000; border-color: var(--accent); }
+  .tool-chip:active { transform: scale(0.95); }
+
+  .redac-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .redac-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px 0;
+    font-size: 12px;
+    color: var(--text2);
+  }
+  .word-count { font-family: var(--mono); font-weight: 700; color: var(--accent); }
+
+  .redac-textarea {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    padding: 12px 16px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 15px;
+    line-height: 1.8;
+    resize: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .redac-textarea::placeholder { color: var(--text2); }
+
+  .redac-analysis {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+  .analysis-title { font-size: 12px; font-weight: 700; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .analysis-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .analysis-item {
+    background: var(--surface2);
+    border-radius: var(--radius-sm);
+    padding: 10px 8px;
+    text-align: center;
+  }
+  .analysis-val { font-size: 18px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
+  .analysis-lbl { font-size: 10px; color: var(--text2); margin-top: 2px; }
+
+  .redac-actions {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    border-top: 1px solid var(--border);
+  }
+  .redac-actions button { flex: 1; padding: 12px; font-size: 13px; font-weight: 700; }
+
+  /* Saved essays list */
+  .essay-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 14px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .essay-item:active { background: var(--surface2); }
+  .essay-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .essay-meta { font-size: 11px; color: var(--text2); }
+  .essay-preview { font-size: 12px; color: var(--text2); margin-top: 6px; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  /* ========== EXAM BLANC ========== */
+  .exam-hero {
+    background: linear-gradient(135deg, #1a0a0a 0%, #2a0f0f 100%);
+    border: 1px solid #3d1515;
+    border-radius: var(--radius);
+    padding: 24px;
+    margin: 16px 0;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .exam-hero::before {
+    content: '🎓';
+    font-size: 80px;
+    position: absolute;
+    right: -10px;
+    top: -10px;
+    opacity: 0.1;
+  }
+  .exam-hero h2 { font-size: 20px; font-weight: 800; color: var(--accent3); margin-bottom: 8px; }
+  .exam-hero p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+  .exam-config {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+  .config-title { font-size: 13px; font-weight: 700; color: var(--text2); margin-bottom: 14px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .config-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 14px;
+  }
+  .config-row:last-child { border-bottom: none; }
+  .config-row .key { color: var(--text2); }
+  .config-row .val { font-weight: 700; font-family: var(--mono); color: var(--accent); }
+
+  .subject-selector {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 14px 0;
+  }
+  .subj-toggle {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .subj-toggle.on { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  /* ========== STATS SCREEN ========== */
+  .overall-card {
+    background: linear-gradient(135deg, var(--surface), var(--surface2));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .overall-score-circle {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 3px solid var(--accent);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .overall-score-circle .big { font-size: 22px; font-weight: 800; font-family: var(--mono); color: var(--accent); }
+  .overall-score-circle .sm { font-size: 11px; color: var(--text2); }
+  .overall-info h3 { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+  .overall-info p { font-size: 12px; color: var(--text2); line-height: 1.5; }
+
+  .subject-stats-list { margin-bottom: 16px; }
+  .subject-stat-row {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+  .ss-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .ss-name { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+  .ss-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .ss-score { font-size: 14px; font-weight: 700; font-family: var(--mono); }
+  .ss-bar { height: 6px; background: var(--surface2); border-radius: 999px; overflow: hidden; }
+  .ss-fill { height: 100%; border-radius: 999px; transition: width 1s cubic-bezier(0.34, 1.56, 0.64, 1); }
+  .ss-detail { display: flex; justify-content: space-between; margin-top: 6px; font-size: 11px; color: var(--text2); }
+
+  /* History */
+  .history-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .hi-icon { font-size: 24px; width: 40px; text-align: center; flex-shrink: 0; }
+  .hi-info { flex: 1; }
+  .hi-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .hi-meta { font-size: 11px; color: var(--text2); }
+  .hi-score { font-size: 16px; font-weight: 800; font-family: var(--mono); }
+
+  /* ========== TOAST ========== */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    opacity: 0;
+    transition: all 0.3s;
+    white-space: nowrap;
+    z-index: 999;
+    pointer-events: none;
+  }
+  .toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* ========== MODAL ========== */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 100;
+    display: none;
+    align-items: flex-end;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 20px 16px 40px;
+    width: 100%;
+    animation: slideUp 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 12px; }
+
+  /* ========== LOADING ========== */
+  .loading-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    z-index: 999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+  }
+  .loading-logo { font-size: 60px; animation: bounce 1s infinite; }
+  @keyframes bounce { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-12px); } }
+  .loading-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .loading-title span { color: var(--accent); }
+  .loading-sub { font-size: 14px; color: var(--text2); }
+  .loading-bar { width: 200px; height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .loading-progress { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 2px; animation: loadingAnim 1.5s ease forwards; }
+  @keyframes loadingAnim { from { width: 0; } to { width: 100%; } }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text2);
+  }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 8px; }
+  .empty-state p { font-size: 13px; line-height: 1.6; }
+
+  /* Chart canvas */
+  #progressChart {
+    width: 100%;
+    max-height: 180px;
+    margin: 8px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- Loading Screen -->
+<div class="loading-screen" id="loadingScreen">
+  <div class="loading-logo">📚</div>
+  <div class="loading-title">BEPC <span>MASTER</span> CI</div>
+  <div class="loading-sub">Chargement en cours...</div>
+  <div class="loading-bar"><div class="loading-progress"></div></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModal()">
+  <div class="modal-sheet" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="modalContent"></div>
+  </div>
+</div>
+
+<div id="app">
+
+  <!-- ===== SCREEN: HOME ===== -->
+  <div class="screen active" id="screen-home">
+    <div class="home-header">
+      <div class="greeting" id="greetingText">Bonne journée ! 🌟</div>
+      <div class="home-title">BEPC <span>MASTER</span> CI</div>
+      <div class="xp-bar-wrap">
+        <div class="xp-header">
+          <div class="xp-level" id="levelLabel">NIVEAU 1 · Débutant</div>
+          <div class="xp-pts" id="xpLabel">0 / 500 XP</div>
+        </div>
+        <div class="xp-bar"><div class="xp-fill" id="xpFill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="scroll-content">
+      <div class="stats-row">
+        <div class="stat-mini">
+          <div class="val" id="homeQuizDone">0</div>
+          <div class="lbl">Quiz faits</div>
+        </div>
+        <div class="stat-mini">
+          <div class="val" id="homeAvgScore">—</div>
+          <div class="lbl">Moy. /20</div>
+        </div>
+        <div class="stat-mini">
+          <div class="val" id="homeStreak">0🔥</div>
+          <div class="lbl">Jours actifs</div>
+        </div>
+      </div>
+
+      <div class="section-title">Modules</div>
+
+      <div class="module-card mod-quiz" onclick="showScreen('quiz-subjects')">
+        <div class="module-icon">🧠</div>
+        <div class="module-info">
+          <div class="module-name">Quiz Intelligent</div>
+          <div class="module-desc">7 matières · Questions aléatoires · Correction détaillée</div>
+        </div>
+        <div class="module-arrow">›</div>
+      </div>
+
+      <div class="module-card mod-redac" onclick="showScreen('redaction')">
+        <div class="module-icon">✍️</div>
+        <div class="module-info">
+          <div class="module-name">Module Rédaction</div>
+          <div class="module-desc">Rédiger, analyser et sauvegarder vos productions</div>
+        </div>
+        <div class="module-arrow">›</div>
+      </div>
+
+      <div class="module-card mod-exam" onclick="showScreen('exam-config')">
+        <div class="module-icon">🎓</div>
+        <div class="module-info">
+          <div class="module-name">Examen Blanc</div>
+          <div class="module-desc">Simulation BEPC complète avec rapport de performance</div>
+        </div>
+        <div class="module-arrow">›</div>
+      </div>
+
+      <div class="module-card mod-stats" onclick="showScreen('stats')">
+        <div class="module-icon">📊</div>
+        <div class="module-info">
+          <div class="module-name">Mes Statistiques</div>
+          <div class="module-desc">Progression, moyennes et historique complet</div>
+        </div>
+        <div class="module-arrow">›</div>
+      </div>
+
+      <div class="section-title">Récent</div>
+      <div id="recentHistory">
+        <div class="empty-state">
+          <div class="icon">🚀</div>
+          <h3>Commence ton premier quiz !</h3>
+          <p>Ton historique apparaîtra ici après le premier quiz.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: QUIZ SUBJECTS ===== -->
+  <div class="screen" id="screen-quiz-subjects">
+    <div class="topbar">
+      <div class="back-btn" onclick="showScreen('home')">‹</div>
+      <h1>Choisir une matière</h1>
+      <div style="width:36px"></div>
+    </div>
+    <div class="scroll-content">
+      <div class="subject-grid" id="subjectGrid">
+        <!-- Generated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: QUIZ QUESTION ===== -->
+  <div class="screen" id="screen-quiz-question">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <span class="quiz-subject-tag" id="quizSubjectTag">MATHS</span>
+        <span class="quiz-timer" id="quizTimer">02:00</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="quizProgress" style="width:0%"></div>
+      </div>
+      <div class="progress-text" id="quizProgressText">Question 1 / 10</div>
+    </div>
+    <div class="scroll-content" style="padding-bottom: 20px;">
+      <div class="question-wrap">
+        <div class="question-text" id="questionText">Chargement...</div>
+        <div class="options-list" id="optionsList"></div>
+        <div class="explanation-box" id="explanationBox">
+          <strong>💡 Explication</strong>
+          <span id="explanationText"></span>
+        </div>
+      </div>
+    </div>
+    <button class="next-btn" id="nextBtn" onclick="nextQuestion()">Question suivante →</button>
+  </div>
+
+  <!-- ===== SCREEN: QUIZ RESULTS ===== -->
+  <div class="screen" id="screen-quiz-results">
+    <div class="topbar">
+      <div style="width:36px"></div>
+      <h1>Résultats</h1>
+      <div style="width:36px"></div>
+    </div>
+    <div class="scroll-content">
+      <div class="results-wrap">
+        <div class="score-circle" id="scoreCircle">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="62" fill="none" stroke="var(--surface2)" stroke-width="8"/>
+            <circle cx="70" cy="70" r="62" fill="none" stroke="var(--accent)" stroke-width="8"
+              stroke-dasharray="389.6" stroke-dashoffset="389.6"
+              stroke-linecap="round" id="scoreCirclePath"/>
+          </svg>
+          <div class="score-value" id="resultScore">0</div>
+          <div class="score-max">/20</div>
+        </div>
+        <div class="result-grade" id="resultGrade">—</div>
+        <div class="result-msg" id="resultMsg">—</div>
+
+        <div class="xp-earned" id="xpEarned">+0 XP</div>
+
+        <div class="result-details">
+          <div class="result-row">
+            <span class="label">✅ Bonnes réponses</span>
+            <span class="val" id="resCorrect">0</span>
+          </div>
+          <div class="result-row">
+            <span class="label">❌ Mauvaises réponses</span>
+            <span class="val" id="resWrong">0</span>
+          </div>
+          <div class="result-row">
+            <span class="label">⏱ Temps utilisé</span>
+            <span class="val" id="resTime">—</span>
+          </div>
+          <div class="result-row">
+            <span class="label">📚 Matière</span>
+            <span class="val" id="resSubject">—</span>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="retryQuiz()">🔄 Rejouer cette matière</button>
+        <button class="btn-secondary" onclick="showScreen('quiz-subjects')">Choisir une autre matière</button>
+        <button class="btn-secondary" onclick="showScreen('home')">🏠 Retour à l'accueil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: REDACTION ===== -->
+  <div class="screen" id="screen-redaction">
+    <div class="topbar">
+      <div class="back-btn" onclick="confirmLeaveRedac()">‹</div>
+      <h1>Rédaction</h1>
+      <div class="back-btn" onclick="showSavedEssays()" style="font-size:14px;">📁</div>
+    </div>
+
+    <div class="redac-toolbar">
+      <div class="tool-chip active" onclick="setRedacType(this,'libre')">Libre</div>
+      <div class="tool-chip" onclick="setRedacType(this,'narration')">Narration</div>
+      <div class="tool-chip" onclick="setRedacType(this,'description')">Description</div>
+      <div class="tool-chip" onclick="setRedacType(this,'argumentation')">Argumentation</div>
+      <div class="tool-chip" onclick="setRedacType(this,'lettre')">Lettre formelle</div>
+      <div class="tool-chip" onclick="setRedacType(this,'resume')">Résumé</div>
+    </div>
+
+    <div class="redac-meta">
+      <span id="redacType" style="font-size:12px; font-weight:600; color:var(--text2);">Type : Libre</span>
+      <span class="word-count" id="wordCount">0 mots</span>
+    </div>
+
+    <div class="redac-content">
+      <textarea class="redac-textarea" id="redacTextarea"
+        placeholder="Commence ta rédaction ici...&#10;&#10;💡 Conseils :&#10;• Introduction : présente le sujet (3-5 lignes)&#10;• Développement : 2-3 paragraphes argumentés&#10;• Conclusion : résume et ouvre la réflexion"
+        oninput="updateRedacStats()"></textarea>
+
+      <div class="redac-analysis">
+        <div class="analysis-title">Analyse rapide</div>
+        <div class="analysis-grid">
+          <div class="analysis-item">
+            <div class="analysis-val" id="analysisMots">0</div>
+            <div class="analysis-lbl">Mots</div>
+          </div>
+          <div class="analysis-item">
+            <div class="analysis-val" id="analysisPhrase">0</div>
+            <div class="analysis-lbl">Phrases</div>
+          </div>
+          <div class="analysis-item">
+            <div class="analysis-val" id="analysisPara">0</div>
+            <div class="analysis-lbl">Paragraphes</div>
+          </div>
+        </div>
+        <div id="redacFeedback" style="margin-top:10px; font-size:12px; color:var(--text2); line-height:1.5;"></div>
+      </div>
+    </div>
+
+    <div class="redac-actions">
+      <button class="btn-secondary" style="font-size:12px;" onclick="clearRedac()">🗑 Effacer</button>
+      <button class="btn-primary" style="font-size:12px;" onclick="saveEssay()">💾 Sauvegarder</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: SAVED ESSAYS ===== -->
+  <div class="screen" id="screen-saved-essays">
+    <div class="topbar">
+      <div class="back-btn" onclick="showScreen('redaction')">‹</div>
+      <h1>Mes rédactions</h1>
+      <div style="width:36px"></div>
+    </div>
+    <div class="scroll-content">
+      <div id="essaysList">
+        <div class="empty-state">
+          <div class="icon">📝</div>
+          <h3>Aucune rédaction sauvegardée</h3>
+          <p>Tes rédactions apparaîtront ici après sauvegarde.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: EXAM CONFIG ===== -->
+  <div class="screen" id="screen-exam-config">
+    <div class="topbar">
+      <div class="back-btn" onclick="showScreen('home')">‹</div>
+      <h1>Examen Blanc</h1>
+      <div style="width:36px"></div>
+    </div>
+    <div class="scroll-content">
+      <div class="exam-hero">
+        <h2>🎓 Simulation BEPC</h2>
+        <p>Reproduit les conditions réelles de l'examen. Chronomètre activé, pas d'aide extérieure.</p>
+      </div>
+
+      <div class="exam-config">
+        <div class="config-title">Configuration</div>
+        <div class="config-row">
+          <span class="key">📝 Questions par matière</span>
+          <span class="val">5</span>
+        </div>
+        <div class="config-row">
+          <span class="key">⏱ Temps total</span>
+          <span class="val">45 min</span>
+        </div>
+        <div class="config-row">
+          <span class="key">📊 Note sur</span>
+          <span class="val">20</span>
+        </div>
+        <div class="config-row">
+          <span class="key">🔄 Questions</span>
+          <span class="val">Aléatoires</span>
+        </div>
+      </div>
+
+      <div class="exam-config">
+        <div class="config-title">Matières incluses</div>
+        <div class="subject-selector" id="examSubjectSelector">
+          <!-- Generated -->
+        </div>
+      </div>
+
+      <button class="btn-primary" style="margin-bottom:40px;" onclick="startExam()">🚀 Démarrer l'examen</button>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: EXAM RUNNING ===== -->
+  <div class="screen" id="screen-exam-running">
+    <div class="quiz-header">
+      <div class="quiz-meta">
+        <span class="quiz-subject-tag" id="examSubjectTag" style="background:rgba(255,107,107,0.2); color:var(--accent3);">EXAMEN BLANC</span>
+        <span class="quiz-timer" id="examTimer">45:00</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-fill" id="examProgress" style="width:0%"></div>
+      </div>
+      <div class="progress-text" id="examProgressText">Question 1 / 35</div>
+    </div>
+    <div class="scroll-content" style="padding-bottom:20px;">
+      <div class="question-wrap">
+        <div style="font-size:11px; color:var(--text2); margin-bottom:8px;" id="examQuestionSubject"></div>
+        <div class="question-text" id="examQuestionText">Chargement...</div>
+        <div class="options-list" id="examOptionsList"></div>
+        <div class="explanation-box" id="examExplanationBox">
+          <strong>💡 Explication</strong>
+          <span id="examExplanationText"></span>
+        </div>
+      </div>
+    </div>
+    <button class="next-btn" id="examNextBtn" onclick="nextExamQuestion()">Question suivante →</button>
+  </div>
+
+  <!-- ===== SCREEN: EXAM RESULTS ===== -->
+  <div class="screen" id="screen-exam-results">
+    <div class="topbar">
+      <div style="width:36px"></div>
+      <h1>Rapport d'examen</h1>
+      <div style="width:36px"></div>
+    </div>
+    <div class="scroll-content">
+      <div class="results-wrap">
+        <div class="score-circle">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="62" fill="none" stroke="var(--surface2)" stroke-width="8"/>
+            <circle cx="70" cy="70" r="62" fill="none" stroke="var(--accent3)" stroke-width="8"
+              stroke-dasharray="389.6" stroke-dashoffset="389.6"
+              stroke-linecap="round" id="examScoreCircle"/>
+          </svg>
+          <div class="score-value" id="examFinalScore">0</div>
+          <div class="score-max">/20</div>
+        </div>
+        <div class="result-grade" id="examFinalGrade">—</div>
+        <div class="result-msg" id="examFinalMsg">—</div>
+
+        <div class="result-details">
+          <div style="font-size:13px; font-weight:700; color:var(--text2); margin-bottom:12px; text-transform:uppercase; letter-spacing:0.5px;">Par matière</div>
+          <div id="examSubjectBreakdown"></div>
+        </div>
+
+        <div class="result-details">
+          <div class="result-row">
+            <span class="label">✅ Total bonnes réponses</span>
+            <span class="val" id="examTotalCorrect">0</span>
+          </div>
+          <div class="result-row">
+            <span class="label">⏱ Temps utilisé</span>
+            <span class="val" id="examTimeUsed">—</span>
+          </div>
+          <div class="result-row">
+            <span class="label">📅 Date</span>
+            <span class="val" id="examDate">—</span>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="showScreen('exam-config')">🔄 Refaire un examen</button>
+        <button class="btn-secondary" onclick="showScreen('home')">🏠 Retour à l'accueil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== SCREEN: STATS ===== -->
+  <div class="screen" id="screen-stats">
+    <div class="topbar">
+      <div class="back-btn" onclick="showScreen('home')">‹</div>
+      <h1>Mes Statistiques</h1>
+      <div style="width:36px"></div>
+    </div>
+    <div class="scroll-content">
+      <div class="overall-card" id="statsOverallCard">
+        <div class="overall-score-circle">
+          <div class="big" id="statsAvgScore">—</div>
+          <div class="sm">/20</div>
+        </div>
+        <div class="overall-info">
+          <h3>Moyenne générale</h3>
+          <p id="statsSubtitle">Fais tes premiers quiz pour voir ta progression !</p>
+        </div>
+      </div>
+
+      <div class="section-title">Par matière</div>
+      <div class="subject-stats-list" id="subjectStatsList">
+        <div class="empty-state" style="padding:20px;">
+          <div class="icon">📊</div>
+          <p>Aucune donnée disponible encore.</p>
+        </div>
+      </div>
+
+      <div class="section-title">Progression</div>
+      <div style="background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px;">
+        <canvas id="progressChart"></canvas>
+        <div id="chartEmpty" style="text-align:center; color:var(--text2); font-size:13px; padding:20px 0; display:none;">Joue au moins 3 quiz pour voir ta progression.</div>
+      </div>
+
+      <div class="section-title">Historique</div>
+      <div id="statsHistory">
+        <div class="empty-state">
+          <div class="icon">📋</div>
+          <h3>Historique vide</h3>
+          <p>Tes quiz complétés apparaîtront ici.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end #app -->
+
+<script>
+// ==================== DATA: QUESTIONS ====================
+const QUESTIONS_DB = {
+  math: [
+    { q: "Quel est le résultat de 3² + 4² ?", options: ["20","25","17","14"], answer: 1, expl: "3² = 9 et 4² = 16. Donc 9 + 16 = 25. C'est le théorème de Pythagore : 3² + 4² = 5²." },
+    { q: "Si x = 3, quelle est la valeur de 2x² − 5x + 1 ?", options: ["4","2","10","7"], answer: 0, expl: "2(3)² − 5(3) + 1 = 2×9 − 15 + 1 = 18 − 15 + 1 = 4." },
+    { q: "Quel est le PGCD de 48 et 36 ?", options: ["6","12","8","18"], answer: 1, expl: "48 = 2⁴×3 et 36 = 2²×3². Le PGCD est le produit des facteurs communs avec le plus petit exposant : 2²×3 = 12." },
+    { q: "Quelle est la mesure d'un angle d'un triangle équilatéral ?", options: ["90°","45°","60°","30°"], answer: 2, expl: "Un triangle équilatéral a 3 angles égaux. La somme des angles d'un triangle = 180°, donc chaque angle = 180°/3 = 60°." },
+    { q: "Simplifie la fraction 24/36.", options: ["3/4","2/3","4/6","1/2"], answer: 1, expl: "On divise numérateur et dénominateur par leur PGCD = 12. Donc 24÷12 / 36÷12 = 2/3." },
+    { q: "Quel est le périmètre d'un rectangle de longueur 8 cm et largeur 5 cm ?", options: ["26 cm","40 cm","13 cm","20 cm"], answer: 0, expl: "Périmètre = 2(l + L) = 2(8 + 5) = 2×13 = 26 cm." },
+    { q: "Résoudre : 2x + 6 = 14. Quelle est la valeur de x ?", options: ["4","10","3","7"], answer: 0, expl: "2x + 6 = 14 → 2x = 14 - 6 = 8 → x = 8/2 = 4." },
+    { q: "Quel est le volume d'un cube d'arête 3 cm ?", options: ["27 cm³","9 cm³","18 cm³","54 cm³"], answer: 0, expl: "Volume d'un cube = a³ = 3³ = 27 cm³." },
+    { q: "À quelle fraction décimale est égale 0,75 ?", options: ["1/4","3/5","3/4","7/5"], answer: 2, expl: "0,75 = 75/100 = 3/4 (en divisant par 25)." },
+    { q: "Si un article coûte 1500 F et bénéficie d'une remise de 20%, quel est le prix final ?", options: ["1300 F","1200 F","1250 F","1100 F"], answer: 1, expl: "Remise = 20% × 1500 = 300 F. Prix final = 1500 - 300 = 1200 F." },
+    { q: "Quel est le résultat de (−3) × (−5) ?", options: ["-15","15","-8","8"], answer: 1, expl: "Le produit de deux nombres négatifs est positif. (−3) × (−5) = +15." },
+    { q: "Dans un triangle rectangle, l'hypoténuse mesure 13 cm et un côté 5 cm. Quel est l'autre côté ?", options: ["8 cm","10 cm","12 cm","11 cm"], answer: 2, expl: "Pythagore : a² + b² = c². 5² + b² = 13² → 25 + b² = 169 → b² = 144 → b = 12 cm." },
+  ],
+  physique: [
+    { q: "Quelle est l'unité de mesure de l'intensité du courant électrique ?", options: ["Volt","Ohm","Ampère","Watt"], answer: 2, expl: "L'intensité du courant électrique se mesure en Ampère (A), du nom du physicien André-Marie Ampère." },
+    { q: "Quelle est la formule de la loi d'Ohm ?", options: ["U = R/I","U = R×I","R = U×I","I = U×R"], answer: 1, expl: "La loi d'Ohm s'énonce : U = R × I, où U est la tension (V), R la résistance (Ω) et I l'intensité (A)." },
+    { q: "Quelle est la vitesse de la lumière dans le vide ?", options: ["3×10⁸ m/s","3×10⁶ m/s","3×10⁵ km/s","3×10⁴ km/s"], answer: 0, expl: "La lumière se propage à environ 300 000 km/s = 3×10⁸ m/s dans le vide." },
+    { q: "Quel symbole chimique représente l'eau ?", options: ["HO","H₂O","H₂O₂","OH"], answer: 1, expl: "L'eau est composée de deux atomes d'hydrogène et d'un atome d'oxygène : H₂O." },
+    { q: "Quelle est l'unité de la résistance électrique ?", options: ["Volt","Ampère","Ohm","Joule"], answer: 2, expl: "La résistance électrique se mesure en Ohm (Ω), du nom du physicien Georg Ohm." },
+    { q: "Lors d'une combustion complète du carbone, quel gaz se produit ?", options: ["CO","CO₂","O₂","CH₄"], answer: 1, expl: "La combustion complète du carbone : C + O₂ → CO₂ (dioxyde de carbone). La combustion incomplète donne du CO." },
+    { q: "Quel est le pH d'une solution neutre ?", options: ["0","7","14","5"], answer: 1, expl: "Une solution est neutre quand son pH = 7. En dessous de 7 : acide. Au-dessus : basique." },
+    { q: "Comment s'appelle le changement d'état de l'eau liquide en vapeur ?", options: ["Fusion","Solidification","Vaporisation","Condensation"], answer: 2, expl: "La vaporisation est le passage de l'état liquide à l'état gazeux. Elle se produit à 100°C pour l'eau à pression atmosphérique." },
+    { q: "Quelle est la puissance d'un appareil utilisant 2A sous 220V ?", options: ["110 W","220 W","440 W","550 W"], answer: 2, expl: "P = U × I = 220 × 2 = 440 W." },
+    { q: "Quel type de circuit permet aux appareils de fonctionner indépendamment ?", options: ["Circuit en série","Circuit en dérivation","Circuit ouvert","Circuit mixte"], answer: 1, expl: "Dans un circuit en dérivation (parallèle), chaque appareil est branché directement aux bornes du générateur et fonctionne indépendamment." },
+  ],
+  svt: [
+    { q: "Quel organe produit l'insuline dans le corps humain ?", options: ["Foie","Rein","Pancréas","Rate"], answer: 2, expl: "Le pancréas produit l'insuline, une hormone qui régule le taux de glucose dans le sang." },
+    { q: "Comment s'appelle le processus par lequel les plantes fabriquent leur nourriture ?", options: ["Respiration","Photosynthèse","Transpiration","Fermentation"], answer: 1, expl: "La photosynthèse est le processus par lequel les plantes utilisent la lumière solaire, le CO₂ et l'eau pour produire du glucose et de l'O₂." },
+    { q: "Combien de chromosomes possède une cellule humaine normale ?", options: ["23","44","46","48"], answer: 2, expl: "Les cellules humaines possèdent 46 chromosomes, organisés en 23 paires. Les gamètes (spermatozoïdes et ovules) en ont 23." },
+    { q: "Quel est le rôle principal du globule rouge ?", options: ["Défense immunitaire","Transport de l'oxygène","Coagulation","Digestion"], answer: 1, expl: "Les globules rouges (érythrocytes) contiennent de l'hémoglobine qui transporte l'oxygène des poumons vers les tissus." },
+    { q: "Quelle partie de la cellule contient l'ADN ?", options: ["Membrane","Cytoplasme","Mitochondrie","Noyau"], answer: 3, expl: "Le noyau cellulaire contient l'essentiel de l'ADN, organisé en chromosomes. Les mitochondries contiennent aussi un peu d'ADN." },
+    { q: "Comment s'appelle la reproduction sans partenaire sexuel ?", options: ["Reproduction sexuée","Reproduction asexuée","Gamétogenèse","Fécondation"], answer: 1, expl: "La reproduction asexuée produit des descendants génétiquement identiques au parent (bouturage, scissiparité, etc.)." },
+    { q: "Quel système coordonne les fonctions du corps humain avec l'aide du système nerveux ?", options: ["Système digestif","Système endocrinien","Système respiratoire","Système lymphatique"], answer: 1, expl: "Le système endocrinien (glandes hormonales) et le système nerveux coordonnent ensemble les fonctions corporelles." },
+    { q: "Qu'est-ce que la mitose ?", options: ["Division cellulaire sexuée","Division cellulaire pour la croissance","Mort cellulaire","Fusion de cellules"], answer: 1, expl: "La mitose est une division cellulaire qui produit 2 cellules filles identiques à la cellule mère (même nombre de chromosomes). Elle assure la croissance et le renouvellement." },
+    { q: "Quel gaz les plantes absorbent-elles lors de la photosynthèse ?", options: ["O₂","N₂","CO₂","H₂"], answer: 2, expl: "Durant la photosynthèse, les plantes absorbent le dioxyde de carbone (CO₂) et rejettent de l'oxygène (O₂)." },
+    { q: "Par quoi sont causées les maladies infectieuses comme le paludisme ?", options: ["Virus","Bactéries","Parasites","Champignons"], answer: 2, expl: "Le paludisme (malaria) est causé par un parasite, le Plasmodium, transmis par la piqûre de moustiques femelles Anophèles." },
+  ],
+  francais: [
+    { q: "Quel est le sujet de la phrase : 'Les élèves étudient avec sérieux.' ?", options: ["étudient","avec sérieux","Les élèves","sérieux"], answer: 2, expl: "Pour trouver le sujet, on pose la question 'Qui est-ce qui + verbe ?' → Qui est-ce qui étudie ? Ce sont les élèves." },
+    { q: "Quelle figure de style est utilisée dans : 'Il est fort comme un lion.' ?", options: ["Métaphore","Comparaison","Antithèse","Hyperbole"], answer: 1, expl: "La comparaison utilise des outils comparatifs (comme, tel, semblable à...). Ici 'comme' compare l'homme au lion." },
+    { q: "Quel temps verbal exprime une action future dans le passé ?", options: ["Imparfait","Futur simple","Conditionnel présent","Passé composé"], answer: 2, expl: "Le conditionnel présent exprime une action future par rapport à un moment du passé. Ex : 'Il dit qu'il viendrait.'" },
+    { q: "Quelle est la nature du mot 'rapidement' ?", options: ["Adjectif","Nom","Adverbe","Verbe"], answer: 2, expl: "'Rapidement' est un adverbe de manière. Les adverbes en -ment sont formés à partir d'un adjectif féminin." },
+    { q: "Quel est l'antonyme du mot 'courage' ?", options: ["Lâcheté","Bravoure","Témérité","Audace"], answer: 0, expl: "L'antonyme (contraire) de 'courage' est 'lâcheté' ou 'couardise'." },
+    { q: "Dans quelle œuvre Victor Hugo décrit-il les misères sociales de la France du XIXe siècle ?", options: ["Notre-Dame de Paris","Les Misérables","Hernani","Les Contemplations"], answer: 1, expl: "'Les Misérables' (1862) de Victor Hugo dépeint la misère sociale à travers Jean Valjean. C'est l'une des œuvres les plus célèbres de la littérature française." },
+    { q: "Qu'est-ce qu'une proposition subordonnée relative ?", options: ["Une proposition indépendante","Une proposition qui complète un nom ou pronom","Une proposition principale","Une proposition juxtaposée"], answer: 1, expl: "La proposition subordonnée relative est introduite par un pronom relatif (qui, que, dont, où...) et complète un nom ou pronom appelé antécédent." },
+    { q: "Quel est le pluriel de 'bijou' ?", options: ["bijous","bijoux","bijoux","bijous"], answer: 1, expl: "Les mots en -ou qui prennent -x au pluriel : bijou, caillou, chou, genou, hibou, joujou, pou → bijoux." },
+    { q: "Quelle est la valeur du passé simple dans un récit littéraire ?", options: ["Action habituelle","Action en cours","Action accomplie et délimitée dans le passé","Action future"], answer: 2, expl: "Le passé simple exprime des actions passées, accomplies, ponctuelles, délimitées dans le temps. C'est le temps du récit littéraire par excellence." },
+    { q: "Quel pronom remplace 'à Marie' dans : 'Je donne un livre à Marie.' ?", options: ["la","lui","y","en"], answer: 1, expl: "'À Marie' est un COI de personne. Il est remplacé par 'lui'. → Je lui donne un livre." },
+  ],
+  anglais: [
+    { q: "What is the correct form: 'She ___ to school every day.'?", options: ["go","goes","going","gone"], answer: 1, expl: "With third person singular (she, he, it), we add -s to the verb in the Simple Present. She GOES to school." },
+    { q: "Which sentence is in the Past Simple tense?", options: ["She is eating","He will study","They played football","I am running"], answer: 2, expl: "'Played' is the Past Simple form of 'play'. Past Simple is used for completed actions in the past." },
+    { q: "What is the plural of 'child'?", options: ["childs","childrens","children","child's"], answer: 2, expl: "'Child' has an irregular plural: CHILDREN. Irregular plurals do not follow the normal -s rule." },
+    { q: "What does 'although' mean in French?", options: ["parce que","bien que / même si","donc","si"], answer: 1, expl: "'Although' is a conjunction of concession meaning 'bien que' or 'même si'. Ex: Although it rained, we went out." },
+    { q: "Choose the correct question: '___ does she come from?'", options: ["What","How","Where","Why"], answer: 2, expl: "'Where' asks about place/origin. 'Where does she come from?' = D'où vient-elle ?" },
+    { q: "What is the comparative of 'good'?", options: ["gooder","more good","best","better"], answer: 3, expl: "'Good' is irregular. Comparative = BETTER, Superlative = BEST. Never 'gooder' or 'more good'." },
+    { q: "Which tense is used for ongoing actions happening NOW?", options: ["Simple Present","Past Simple","Present Continuous","Future Simple"], answer: 2, expl: "Present Continuous (am/is/are + verb-ing) expresses actions happening at the moment of speaking." },
+    { q: "What does 'nevertheless' mean?", options: ["in addition","as a result","in spite of this / however","for example"], answer: 2, expl: "'Nevertheless' is a formal connector meaning 'malgré cela / cependant / néanmoins'. It introduces a contrasting idea." },
+    { q: "Complete: 'If I ___ rich, I would travel the world.'", options: ["am","was","were","be"], answer: 2, expl: "In conditional type 2 (hypothetical present/future), we use 'were' (or 'was' informally) for all persons after 'if'." },
+    { q: "What is the passive form of 'They built this house in 1990'?", options: ["This house builds in 1990","This house was built in 1990","This house is built in 1990","This house built in 1990"], answer: 1, expl: "Passive voice = subject + be (conjugated) + past participle. In Past Simple: was/were + past participle." },
+  ],
+  histoire_geo: [
+    { q: "En quelle année la Côte d'Ivoire a-t-elle obtenu son indépendance ?", options: ["1958","1962","1960","1963"], answer: 2, expl: "La Côte d'Ivoire a proclamé son indépendance le 7 août 1960, sous la présidence de Félix Houphouët-Boigny." },
+    { q: "Quel était le principal moteur de la traite négrière atlantique ?", options: ["La curiosité scientifique","L'expansion de l'esclavage dans les plantations américaines","Les guerres religieuses","L'échange commercial équitable"], answer: 1, expl: "La traite atlantique (XVIe-XIXe siècles) était principalement alimentée par la demande de main-d'œuvre dans les plantations d'Amérique (canne à sucre, coton, tabac)." },
+    { q: "Quel fleuve traverse Abidjan ?", options: ["Le Niger","Le Nil","La Comoé","Le Bandama"], answer: 2, expl: "La Comoé est le fleuve qui passe près d'Abidjan. La lagune Ébrié sépare le Plateau des autres communes d'Abidjan." },
+    { q: "Quelle est la capitale politique de la Côte d'Ivoire depuis 1983 ?", options: ["Abidjan","San-Pédro","Yamoussoukro","Bouaké"], answer: 2, expl: "Yamoussoukro est la capitale politique officielle depuis 1983, par décret du président Félix Houphouët-Boigny, qui y est né." },
+    { q: "Quelle est la principale religion pratiquée en Côte d'Ivoire ?", options: ["Islam uniquement","Christianisme uniquement","Islam et Christianisme en proportions importantes","Animisme exclusivement"], answer: 2, expl: "La Côte d'Ivoire est un pays laïc avec une diversité religieuse : environ 40-45% de musulmans, 35-40% de chrétiens, et des pratiques animistes." },
+    { q: "Qu'est-ce que la colonisation ?", options: ["Un échange commercial entre pays","Une domination politique et économique d'un pays sur un autre","Une alliance militaire","Une union volontaire de pays"], answer: 1, expl: "La colonisation est la domination politique, économique et culturelle exercée par un pays (métropole) sur un autre territoire (colonie), souvent par la force." },
+    { q: "Quel était le nom de l'organisation africaine créée en 1963, précurseur de l'Union Africaine ?", options: ["CEDEAO","ONU","OUA (Organisation de l'Unité Africaine)","UEMOA"], answer: 2, expl: "L'OUA (Organisation de l'Unité Africaine) a été fondée le 25 mai 1963. Elle est devenue l'Union Africaine (UA) en 2002." },
+    { q: "Quel est le principal produit d'exportation de la Côte d'Ivoire ?", options: ["L'or","Le pétrole","Le cacao","Le café"], answer: 2, expl: "La Côte d'Ivoire est le premier producteur mondial de cacao. Elle représente environ 40% de la production mondiale." },
+    { q: "Sur quel continent se situe la Côte d'Ivoire ?", options: ["Asie","Amérique","Europe","Afrique"], answer: 3, expl: "La Côte d'Ivoire est située en Afrique de l'Ouest, bordée par le Libéria, la Guinée, le Mali, le Burkina Faso et le Ghana." },
+    { q: "Quelle était la cause principale de la Première Guerre Mondiale (1914-1918) ?", options: ["La révolution industrielle","L'accumulation de tensions en Europe (nationalisme, impérialisme, alliances)","La découverte de nouvelles routes commerciales","La lutte pour les ressources pétrolières"], answer: 1, expl: "La Première Guerre Mondiale résulte d'une accumulation de tensions : nationalisme exacerbé, rivalités coloniales, système d'alliances, et course aux armements. L'assassinat de François-Ferdinand fut le déclencheur." },
+  ],
+  edhc: [
+    { q: "Que signifie l'abréviation EDHC ?", options: ["Études Des Hommes et de la Culture","Éducation aux Droits de l'Homme et à la Citoyenneté","École Des Humanités et Civilisations","Enseignement Du Comportement Humain"], answer: 1, expl: "EDHC signifie Éducation aux Droits de l'Homme et à la Citoyenneté. Cette matière vise à former des citoyens responsables." },
+    { q: "Quel document international proclame les droits fondamentaux de l'être humain ?", options: ["La Constitution de la Côte d'Ivoire","La Déclaration Universelle des Droits de l'Homme","La Charte de l'OUA","Le Traité de Versailles"], answer: 1, expl: "La Déclaration Universelle des Droits de l'Homme (DUDH) a été adoptée par l'ONU le 10 décembre 1948. Elle proclame les droits inaliénables de tout être humain." },
+    { q: "Quel est l'âge de la majorité civique en Côte d'Ivoire ?", options: ["16 ans","18 ans","21 ans","20 ans"], answer: 1, expl: "En Côte d'Ivoire, la majorité civique est fixée à 18 ans. C'est à partir de cet âge qu'un citoyen peut voter et accomplir des actes civiques." },
+    { q: "Qu'est-ce que la démocratie ?", options: ["Le gouvernement d'un seul homme","Le gouvernement par le peuple et pour le peuple","La domination d'une élite","Le régime militaire"], answer: 1, expl: "La démocratie (du grec demos = peuple, kratos = pouvoir) est un système politique où le pouvoir appartient au peuple, exercé directement ou par représentants élus." },
+    { q: "Quelle institution représente le pouvoir législatif en Côte d'Ivoire ?", options: ["La Présidence de la République","L'Assemblée Nationale","La Cour Suprême","Le Gouvernement"], answer: 1, expl: "Le pouvoir législatif (faire les lois) est exercé par l'Assemblée Nationale, composée de députés élus par le peuple pour 5 ans." },
+    { q: "Qu'est-ce que le civisme ?", options: ["La participation aux élections uniquement","L'ensemble des devoirs du citoyen envers la communauté","La connaissance des lois","Le droit de vote"], answer: 1, expl: "Le civisme désigne l'ensemble des comportements et attitudes d'un bon citoyen : respect des lois, participation à la vie sociale, paiement des impôts, propreté..." },
+    { q: "Que prévoit l'article premier de la Constitution ivoirienne ?", options: ["Le droit à l'éducation","La Côte d'Ivoire est une République indépendante et laïque","Le droit de vote","Les droits des femmes"], answer: 1, expl: "L'article 1er de la Constitution de Côte d'Ivoire dispose que la Côte d'Ivoire est une République indépendante et souveraine, démocratique, laïque et sociale." },
+    { q: "Quel principe garantit que tous les citoyens ont les mêmes droits ?", options: ["La liberté","L'égalité","La fraternité","La solidarité"], answer: 1, expl: "Le principe d'égalité garantit que tous les citoyens, sans distinction de race, de sexe, de religion ou d'origine, jouissent des mêmes droits et sont soumis aux mêmes devoirs." },
+    { q: "Qu'est-ce que la corruption ?", options: ["Un acte de générosité","L'utilisation abusive d'une position pour un avantage personnel illicite","Un acte de patriotisme","Le respect des lois"], answer: 1, expl: "La corruption est l'abus d'une position de confiance ou de pouvoir à des fins personnelles. C'est une infraction pénale qui nuit au développement de la société." },
+    { q: "Quelle est la devise de la Côte d'Ivoire ?", options: ["Liberté, Égalité, Fraternité","Union, Discipline, Travail","Paix, Justice, Développement","Solidarité, Justice, Paix"], answer: 1, expl: "La devise officielle de la Côte d'Ivoire est 'Union, Discipline, Travail', reflétant les valeurs fondatrices de la nation." },
+  ],
+};
+
+const SUBJECTS = [
+  { id: 'math', name: 'Mathématiques', icon: '📐', color: 'var(--math)' },
+  { id: 'physique', name: 'Physique-Chimie', icon: '⚗️', color: 'var(--phys)' },
+  { id: 'svt', name: 'SVT', icon: '🌿', color: 'var(--svt)' },
+  { id: 'francais', name: 'Français', icon: '📖', color: 'var(--fr)' },
+  { id: 'anglais', name: 'Anglais', icon: '🌍', color: 'var(--en)' },
+  { id: 'histoire_geo', name: 'Histoire-Géo', icon: '🗺️', color: 'var(--hg)' },
+  { id: 'edhc', name: 'EDHC', icon: '⚖️', color: 'var(--edhc)' },
+];
+
+const LEVELS = [
+  { name: 'Débutant', min: 0, max: 500 },
+  { name: 'Élève sérieux', min: 500, max: 1200 },
+  { name: 'Bachelier en herbe', min: 1200, max: 2500 },
+  { name: 'Expert BEPC', min: 2500, max: 5000 },
+  { name: 'Maître académique', min: 5000, max: 99999 },
+];
+
+// ==================== APP STATE ====================
+let state = {
+  xp: 0, streak: 0, lastActiveDay: '',
+  quizHistory: [],
+  essays: [],
+  currentScreen: 'home',
+  quiz: { subject: null, questions: [], current: 0, correct: 0, startTime: 0, timerInterval: null, answered: false },
+  exam: { questions: [], current: 0, correct: 0, startTime: 0, timerInterval: null, answered: false, bySubject: {} },
+  redacType: 'libre',
+};
+
+// Load from localStorage
+function loadState() {
+  try {
+    const saved = localStorage.getItem('bepcmaster_state');
+    if (saved) {
+      const s = JSON.parse(saved);
+      state.xp = s.xp || 0;
+      state.streak = s.streak || 0;
+      state.lastActiveDay = s.lastActiveDay || '';
+      state.quizHistory = s.quizHistory || [];
+      state.essays = s.essays || [];
+    }
+  } catch(e) {}
+}
+
+function saveState() {
+  try {
+    localStorage.setItem('bepcmaster_state', JSON.stringify({
+      xp: state.xp, streak: state.streak,
+      lastActiveDay: state.lastActiveDay,
+      quizHistory: state.quizHistory,
+      essays: state.essays,
+    }));
+  } catch(e) {}
+}
+
+// ==================== SCREEN NAVIGATION ====================
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  state.currentScreen = name;
+
+  // Handle bottom nav visibility
+  const noNav = ['quiz-question','quiz-results','exam-running','exam-results','redaction','saved-essays'];
+  document.querySelector('.bottom-nav').style.display = noNav.includes(name) ? 'none' : 'flex';
+
+  // Update nav active state
+  document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+  const navMap = { home: 0, 'quiz-subjects': 1, redaction: 2, 'exam-config': 3, stats: 4 };
+  const navIndex = navMap[name];
+  if (navIndex !== undefined) {
+    document.querySelectorAll('.nav-item')[navIndex]?.classList.add('active');
+  }
+
+  // Screen-specific init
+  if (name === 'home') updateHomeUI();
+  if (name === 'quiz-subjects') renderSubjectGrid();
+  if (name === 'stats') renderStats();
+  if (name === 'exam-config') renderExamConfig();
+  if (name === 'saved-essays') renderSavedEssays();
+}
+
+// ==================== HOME UI ====================
+function updateHomeUI() {
+  const now = new Date();
+  const h = now.getHours();
+  const greet = h < 12 ? 'Bonjour ! ☀️' : h < 18 ? 'Bon après-midi ! 🌤️' : 'Bonsoir ! 🌙';
+  document.getElementById('greetingText').textContent = greet;
+
+  // XP & Level
+  const level = getLevelInfo();
+  document.getElementById('levelLabel').textContent = `NIVEAU ${level.num} · ${level.name}`;
+  document.getElementById('xpLabel').textContent = `${state.xp} / ${level.max} XP`;
+  const pct = ((state.xp - level.min) / (level.max - level.min)) * 100;
+  document.getElementById('xpFill').style.width = Math.min(100, pct) + '%';
+
+  // Stats
+  const done = state.quizHistory.length;
+  document.getElementById('homeQuizDone').textContent = done;
+  const avg = calcOverallAvg();
+  document.getElementById('homeAvgScore').textContent = avg !== null ? avg.toFixed(1) : '—';
+  document.getElementById('homeStreak').textContent = state.streak + '🔥';
+
+  // Recent
+  const recentEl = document.getElementById('recentHistory');
+  if (state.quizHistory.length === 0) {
+    recentEl.innerHTML = `<div class="empty-state"><div class="icon">🚀</div><h3>Commence ton premier quiz !</h3><p>Ton historique apparaîtra ici.</p></div>`;
+  } else {
+    const recent = [...state.quizHistory].reverse().slice(0, 3);
+    recentEl.innerHTML = recent.map(h => {
+      const sub = SUBJECTS.find(s => s.id === h.subject) || { icon:'📝', name: h.subject };
+      const scoreColor = h.score >= 14 ? 'var(--accent2)' : h.score >= 10 ? 'var(--accent)' : 'var(--accent3)';
+      return `<div class="history-item">
+        <div class="hi-icon">${sub.icon}</div>
+        <div class="hi-info">
+          <div class="hi-title">${sub.name}</div>
+          <div class="hi-meta">${h.correct}/${h.total} bonnes réponses · ${h.date}</div>
+        </div>
+        <div class="hi-score" style="color:${scoreColor}">${h.score}/20</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Streak check
+  const today = new Date().toDateString();
+  if (state.lastActiveDay !== today) {
+    const yesterday = new Date(Date.now() - 86400000).toDateString();
+    if (state.lastActiveDay === yesterday) {
+      state.streak += 1;
+    } else if (state.lastActiveDay !== today) {
+      state.streak = 1;
+    }
+    state.lastActiveDay = today;
+    saveState();
+  }
+}
+
+function getLevelInfo() {
+  for (let i = LEVELS.length - 1; i >= 0; i--) {
+    if (state.xp >= LEVELS[i].min) {
+      return { ...LEVELS[i], num: i + 1 };
+    }
+  }
+  return { ...LEVELS[0], num: 1 };
+}
+
+function calcOverallAvg() {
+  if (state.quizHistory.length === 0) return null;
+  const sum = state.quizHistory.reduce((a, b) => a + b.score, 0);
+  return sum / state.quizHistory.length;
+}
+
+// ==================== QUIZ ====================
+function renderSubjectGrid() {
+  const grid = document.getElementById('subjectGrid');
+  grid.innerHTML = SUBJECTS.map(s => {
+    const qCount = QUESTIONS_DB[s.id]?.length || 0;
+    const hist = state.quizHistory.filter(h => h.subject === s.id);
+    const avg = hist.length > 0 ? (hist.reduce((a,b) => a + b.score, 0) / hist.length).toFixed(1) : null;
+    return `<div class="subject-card" onclick="startQuiz('${s.id}')" style="border-color:${s.color}22;">
+      <div class="subject-icon">${s.icon}</div>
+      <div class="subject-name">${s.name}</div>
+      <div class="subject-count">${qCount} questions${avg ? ` · Moy: ${avg}/20` : ''}</div>
+      <div class="subject-dot" style="background:${s.color};"></div>
+    </div>`;
+  }).join('');
+}
+
+function startQuiz(subjectId) {
+  const sub = SUBJECTS.find(s => s.id === subjectId);
+  const allQ = QUESTIONS_DB[subjectId] || [];
+  if (allQ.length === 0) { showToast('Aucune question disponible.'); return; }
+
+  // Pick 10 random questions
+  const shuffled = [...allQ].sort(() => Math.random() - 0.5);
+  const questions = shuffled.slice(0, Math.min(10, shuffled.length));
+
+  state.quiz = {
+    subject: subjectId,
+    questions,
+    current: 0,
+    correct: 0,
+    startTime: Date.now(),
+    timerInterval: null,
+    answered: false,
+  };
+
+  showScreen('quiz-question');
+  renderQuestion();
+}
+
+function renderQuestion() {
+  const q = state.quiz.questions[state.quiz.current];
+  const sub = SUBJECTS.find(s => s.id === state.quiz.subject);
+  const total = state.quiz.questions.length;
+  const idx = state.quiz.current;
+
+  // Header
+  const tag = document.getElementById('quizSubjectTag');
+  tag.textContent = sub.name.toUpperCase();
+  tag.style.background = sub.color + '22';
+  tag.style.color = sub.color;
+
+  document.getElementById('quizProgress').style.width = ((idx / total) * 100) + '%';
+  document.getElementById('quizProgressText').textContent = `Question ${idx + 1} / ${total}`;
+
+  // Timer
+  clearInterval(state.quiz.timerInterval);
+  let seconds = 120;
+  updateTimerDisplay('quizTimer', seconds);
+  state.quiz.timerInterval = setInterval(() => {
+    seconds--;
+    updateTimerDisplay('quizTimer', seconds);
+    if (seconds <= 15) document.getElementById('quizTimer').classList.add('warning');
+    if (seconds <= 0) { clearInterval(state.quiz.timerInterval); autoAnswerQuestion(); }
+  }, 1000);
+
+  // Question
+  document.getElementById('questionText').textContent = q.q;
+  document.getElementById('explanationBox').classList.remove('show');
+  document.getElementById('nextBtn').classList.remove('show');
+  state.quiz.answered = false;
+
+  // Options
+  const letters = ['A','B','C','D'];
+  document.getElementById('optionsList').innerHTML = q.options.map((opt, i) =>
+    `<button class="option-btn" onclick="selectAnswer(${i})" id="opt-${i}">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>`
+  ).join('');
+}
+
+function updateTimerDisplay(elId, seconds) {
+  const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  const s = (seconds % 60).toString().padStart(2, '0');
+  document.getElementById(elId).textContent = `${m}:${s}`;
+}
+
+function selectAnswer(idx) {
+  if (state.quiz.answered) return;
+  state.quiz.answered = true;
+  clearInterval(state.quiz.timerInterval);
+
+  const q = state.quiz.questions[state.quiz.current];
+  const correct = q.answer;
+
+  // Style buttons
+  document.querySelectorAll('.option-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === correct) btn.classList.add('correct');
+    else if (i === idx && idx !== correct) btn.classList.add('wrong');
+  });
+  if (idx === correct) { state.quiz.correct++; }
+
+  document.getElementById('explanationText').textContent = q.expl;
+  document.getElementById('explanationBox').classList.add('show');
+  document.getElementById('nextBtn').classList.add('show');
+}
+
+function autoAnswerQuestion() {
+  if (state.quiz.answered) return;
+  selectAnswer(-1); // Select nothing (auto reveal)
+}
+
+function nextQuestion() {
+  state.quiz.current++;
+  if (state.quiz.current >= state.quiz.questions.length) {
+    endQuiz();
+  } else {
+    document.getElementById('quizTimer').classList.remove('warning');
+    renderQuestion();
+  }
+}
+
+function endQuiz() {
+  clearInterval(state.quiz.timerInterval);
+  const total = state.quiz.questions.length;
+  const correct = state.quiz.correct;
+  const score = Math.round((correct / total) * 20 * 10) / 10;
+  const elapsed = Math.floor((Date.now() - state.quiz.startTime) / 1000);
+  const sub = SUBJECTS.find(s => s.id === state.quiz.subject);
+
+  // Save to history
+  const entry = {
+    subject: state.quiz.subject,
+    score,
+    correct,
+    total,
+    date: new Date().toLocaleDateString('fr-FR'),
+    time: formatTime(elapsed),
+    type: 'quiz',
+  };
+  state.quizHistory.push(entry);
+
+  // XP
+  const xpGained = Math.round(correct * 10 + (score >= 14 ? 50 : score >= 10 ? 20 : 0));
+  state.xp += xpGained;
+  saveState();
+
+  // Results UI
+  document.getElementById('resultScore').textContent = score;
+  const { grade, msg } = gradeFromScore(score);
+  document.getElementById('resultGrade').textContent = grade;
+  document.getElementById('resultGrade').style.color = score >= 14 ? 'var(--accent2)' : score >= 10 ? 'var(--accent)' : 'var(--accent3)';
+  document.getElementById('resultMsg').textContent = msg;
+  document.getElementById('xpEarned').textContent = `+ ${xpGained} XP gagnés ! 🏅`;
+  document.getElementById('resCorrect').textContent = correct;
+  document.getElementById('resWrong').textContent = total - correct;
+  document.getElementById('resTime').textContent = formatTime(elapsed);
+  document.getElementById('resSubject').textContent = sub.name;
+
+  // Animate circle
+  const pct = score / 20;
+  const circumference = 389.6;
+  const offset = circumference - (pct * circumference);
+  const circle = document.getElementById('scoreCirclePath');
+  const color = score >= 14 ? 'var(--accent2)' : score >= 10 ? 'var(--accent)' : 'var(--accent3)';
+  circle.style.stroke = color;
+  setTimeout(() => { circle.style.strokeDashoffset = offset; circle.style.transition = 'stroke-dashoffset 1s ease'; }, 100);
+
+  showScreen('quiz-results');
+}
+
+function retryQuiz() { startQuiz(state.quiz.subject); }
+
+function gradeFromScore(score) {
+  if (score >= 18) return { grade: '⭐ Excellent !', msg: 'Performance exceptionnelle. Tu maîtrises parfaitement ce chapitre !' };
+  if (score >= 14) return { grade: '✅ Bien', msg: 'Très bon travail ! Continue ainsi pour décrocher ton BEPC.' };
+  if (score >= 10) return { grade: '🟡 Passable', msg: 'Tu passes la moyenne, mais il faut encore travailler pour être sûr au BEPC.' };
+  if (score >= 5) return { grade: '⚠️ Insuffisant', msg: 'Il faut revoir ce chapitre. Refais ce quiz après révision.' };
+  return { grade: '❌ Très insuffisant', msg: 'Ce chapitre nécessite une révision complète. Ne te décourage pas !' };
+}
+
+function formatTime(seconds) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}m ${s}s`;
+}
+
+// ==================== REDACTION ====================
+let currentRedacType = 'libre';
+const REDAC_PROMPTS = {
+  libre: 'Commence ta rédaction ici...\n\n💡 Conseils :\n• Introduction : présente le sujet (3-5 lignes)\n• Développement : 2-3 paragraphes argumentés\n• Conclusion : résume et ouvre la réflexion',
+  narration: 'Raconte une histoire...\n\n💡 Structure de la narration :\n• Situation initiale (présentation des personnages et du cadre)\n• Élément perturbateur (problème ou événement)\n• Péripéties (actions, aventures)\n• Dénouement (résolution du problème)\n• Situation finale',
+  description: 'Décris un lieu, une personne ou un objet...\n\n💡 Conseils de description :\n• Commence par une vue d\'ensemble\n• Détaille les éléments importants\n• Utilise des adjectifs variés et précis\n• Fais appel aux 5 sens',
+  argumentation: 'Rédige un texte argumentatif...\n\n💡 Structure de l\'argumentation :\n• Thèse : présente ta position\n• Argument 1 + exemple concret\n• Argument 2 + exemple concret\n• Réfutation des contre-arguments\n• Conclusion : réaffirme ta position',
+  lettre: 'Madame / Monsieur,\n\n[Corps de la lettre...]\n\nVeuillez agréer, Madame / Monsieur, l\'expression de mes salutations distinguées.\n\n[Prénom Nom]',
+  resume: 'Résume le texte...\n\n💡 Méthode du résumé :\n• Lis le texte entier d\'abord\n• Identifie les idées principales\n• Reformule sans copier\n• Respecte le rapport 1/4 ou 1/3 de la longueur originale',
+};
+
+function setRedacType(el, type) {
+  document.querySelectorAll('.tool-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  currentRedacType = type;
+  document.getElementById('redacType').textContent = 'Type : ' + el.textContent;
+  const textarea = document.getElementById('redacTextarea');
+  if (textarea.value.trim() === '' || confirm('Changer de type effacera le texte actuel. Continuer ?')) {
+    textarea.value = '';
+    textarea.placeholder = REDAC_PROMPTS[type];
+    updateRedacStats();
+  }
+}
+
+function updateRedacStats() {
+  const text = document.getElementById('redacTextarea').value;
+  const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+  const sentences = (text.match(/[.!?]+/g) || []).length;
+  const paragraphs = text.trim() === '' ? 0 : text.split(/\n\n+/).filter(p => p.trim()).length;
+
+  document.getElementById('wordCount').textContent = words + ' mots';
+  document.getElementById('analysisMots').textContent = words;
+  document.getElementById('analysisPhrase').textContent = sentences;
+  document.getElementById('analysisPara').textContent = paragraphs;
+
+  // Feedback
+  let feedback = '';
+  if (words === 0) { feedback = 'Commence à écrire pour voir l\'analyse.'; }
+  else if (words < 50) { feedback = '⚠️ Texte trop court. Développe davantage tes idées.'; }
+  else if (words < 150) { feedback = '📝 Bon début ! Essaie d\'atteindre au moins 200 mots pour une rédaction complète.'; }
+  else if (words < 300) { feedback = '✅ Longueur correcte. Vérifie la structure : introduction, développement, conclusion.'; }
+  else { feedback = '🌟 Excellent ! Tu as produit une rédaction bien développée.'; }
+
+  if (paragraphs < 3 && words > 100) feedback += ' Pense à séparer tes idées en paragraphes distincts.';
+  document.getElementById('redacFeedback').textContent = feedback;
+}
+
+function saveEssay() {
+  const text = document.getElementById('redacTextarea').value.trim();
+  if (!text) { showToast('Rien à sauvegarder.'); return; }
+  const words = text.split(/\s+/).length;
+  const title = text.split(/\n/)[0].substring(0, 40) || 'Rédaction sans titre';
+  const essay = {
+    id: Date.now(),
+    title,
+    type: currentRedacType,
+    text,
+    words,
+    date: new Date().toLocaleDateString('fr-FR'),
+  };
+  state.essays.unshift(essay);
+  saveState();
+  showToast('✅ Rédaction sauvegardée !');
+}
+
+function clearRedac() {
+  if (document.getElementById('redacTextarea').value && confirm('Effacer tout le texte ?')) {
+    document.getElementById('redacTextarea').value = '';
+    updateRedacStats();
+  }
+}
+
+function confirmLeaveRedac() {
+  if (document.getElementById('redacTextarea').value.trim()) {
+    if (confirm('Quitter ? Le texte non sauvegardé sera perdu.')) showScreen('home');
+  } else showScreen('home');
+}
+
+function showSavedEssays() { showScreen('saved-essays'); }
+
+function renderSavedEssays() {
+  const el = document.getElementById('essaysList');
+  if (state.essays.length === 0) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📝</div><h3>Aucune rédaction sauvegardée</h3><p>Tes rédactions apparaîtront ici.</p></div>`;
+    return;
+  }
+  el.innerHTML = state.essays.map(e =>
+    `<div class="essay-item" onclick="openEssay(${e.id})">
+      <div class="essay-title">${e.title}</div>
+      <div class="essay-meta">${e.date} · ${e.words} mots · ${e.type}</div>
+      <div class="essay-preview">${e.text}</div>
+    </div>`
+  ).join('');
+}
+
+function openEssay(id) {
+  const essay = state.essays.find(e => e.id === id);
+  if (!essay) return;
+  document.getElementById('redacTextarea').value = essay.text;
+  updateRedacStats();
+  showScreen('redaction');
+}
+
+// ==================== EXAM ====================
+let examSelectedSubjects = new Set(SUBJECTS.map(s => s.id));
+
+function renderExamConfig() {
+  const sel = document.getElementById('examSubjectSelector');
+  sel.innerHTML = SUBJECTS.map(s =>
+    `<div class="subj-toggle ${examSelectedSubjects.has(s.id) ? 'on' : ''}" onclick="toggleExamSubject('${s.id}', this)">${s.icon} ${s.name}</div>`
+  ).join('');
+}
+
+function toggleExamSubject(id, el) {
+  if (examSelectedSubjects.has(id)) {
+    if (examSelectedSubjects.size <= 1) { showToast('Au moins une matière requise.'); return; }
+    examSelectedSubjects.delete(id);
+    el.classList.remove('on');
+  } else {
+    examSelectedSubjects.add(id);
+    el.classList.add('on');
+  }
+}
+
+function startExam() {
+  const selectedIds = [...examSelectedSubjects];
+  let allQ = [];
+  const bySubj = {};
+
+  selectedIds.forEach(sid => {
+    const qs = QUESTIONS_DB[sid] || [];
+    const shuffled = [...qs].sort(() => Math.random() - 0.5).slice(0, 5);
+    shuffled.forEach(q => allQ.push({ ...q, subjectId: sid }));
+    bySubj[sid] = { correct: 0, total: shuffled.length };
+  });
+
+  allQ = allQ.sort(() => Math.random() - 0.5);
+
+  state.exam = {
+    questions: allQ,
+    current: 0,
+    correct: 0,
+    startTime: Date.now(),
+    timerInterval: null,
+    answered: false,
+    bySubject: bySubj,
+  };
+
+  showScreen('exam-running');
+  document.querySelector('.bottom-nav').style.display = 'none';
+
+  // Timer: 45 min
+  let totalSeconds = 45 * 60;
+  updateTimerDisplay('examTimer', totalSeconds);
+  state.exam.timerInterval = setInterval(() => {
+    totalSeconds--;
+    updateTimerDisplay('examTimer', totalSeconds);
+    if (totalSeconds <= 120) document.getElementById('examTimer').classList.add('warning');
+    if (totalSeconds <= 0) { clearInterval(state.exam.timerInterval); endExam(); }
+  }, 1000);
+
+  renderExamQuestion();
+}
+
+function renderExamQuestion() {
+  const eq = state.exam.questions[state.exam.current];
+  const sub = SUBJECTS.find(s => s.id === eq.subjectId);
+  const total = state.exam.questions.length;
+  const idx = state.exam.current;
+
+  document.getElementById('examProgress').style.width = ((idx / total) * 100) + '%';
+  document.getElementById('examProgressText').textContent = `Question ${idx + 1} / ${total}`;
+  document.getElementById('examQuestionSubject').textContent = `${sub.icon} ${sub.name}`;
+  document.getElementById('examQuestionText').textContent = eq.q;
+  document.getElementById('examExplanationBox').classList.remove('show');
+  document.getElementById('examNextBtn').classList.remove('show');
+  state.exam.answered = false;
+
+  const letters = ['A','B','C','D'];
+  document.getElementById('examOptionsList').innerHTML = eq.options.map((opt, i) =>
+    `<button class="option-btn" onclick="selectExamAnswer(${i})" id="eopt-${i}">
+      <span class="option-letter">${letters[i]}</span>
+      <span>${opt}</span>
+    </button>`
+  ).join('');
+}
+
+function selectExamAnswer(idx) {
+  if (state.exam.answered) return;
+  state.exam.answered = true;
+
+  const eq = state.exam.questions[state.exam.current];
+  const correct = eq.answer;
+
+  document.querySelectorAll('#examOptionsList .option-btn').forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === correct) btn.classList.add('correct');
+    else if (i === idx && idx !== correct) btn.classList.add('wrong');
+  });
+
+  if (idx === correct) {
+    state.exam.correct++;
+    state.exam.bySubject[eq.subjectId].correct++;
+  }
+
+  document.getElementById('examExplanationText').textContent = eq.expl;
+  document.getElementById('examExplanationBox').classList.add('show');
+  document.getElementById('examNextBtn').classList.add('show');
+}
+
+function nextExamQuestion() {
+  state.exam.current++;
+  if (state.exam.current >= state.exam.questions.length) {
+    endExam();
+  } else {
+    renderExamQuestion();
+  }
+}
+
+function endExam() {
+  clearInterval(state.exam.timerInterval);
+  const total = state.exam.questions.length;
+  const correct = state.exam.correct;
+  const score = Math.round((correct / total) * 20 * 10) / 10;
+  const elapsed = Math.floor((Date.now() - state.exam.startTime) / 1000);
+
+  // Save
+  const entry = {
+    subject: 'exam',
+    score, correct, total,
+    date: new Date().toLocaleDateString('fr-FR'),
+    time: formatTime(elapsed),
+    type: 'exam',
+    bySubject: state.exam.bySubject,
+  };
+  state.quizHistory.push(entry);
+  const xpGained = Math.round(correct * 15 + (score >= 14 ? 100 : score >= 10 ? 40 : 0));
+  state.xp += xpGained;
+  saveState();
+
+  // Results
+  document.getElementById('examFinalScore').textContent = score;
+  const { grade, msg } = gradeFromScore(score);
+  document.getElementById('examFinalGrade').textContent = grade;
+  document.getElementById('examFinalMsg').textContent = msg;
+  document.getElementById('examTotalCorrect').textContent = `${correct} / ${total}`;
+  document.getElementById('examTimeUsed').textContent = formatTime(elapsed);
+  document.getElementById('examDate').textContent = new Date().toLocaleDateString('fr-FR');
+
+  // Subject breakdown
+  let breakdown = '';
+  Object.entries(state.exam.bySubject).forEach(([sid, data]) => {
+    const sub = SUBJECTS.find(s => s.id === sid);
+    const subScore = data.total > 0 ? Math.round((data.correct / data.total) * 20 * 10) / 10 : 0;
+    const color = subScore >= 14 ? 'var(--accent2)' : subScore >= 10 ? 'var(--accent)' : 'var(--accent3)';
+    breakdown += `<div class="result-row">
+      <span class="label">${sub?.icon || ''} ${sub?.name || sid}</span>
+      <span class="val" style="color:${color}">${subScore}/20</span>
+    </div>`;
+  });
+  document.getElementById('examSubjectBreakdown').innerHTML = breakdown;
+
+  // Circle
+  const pct = score / 20;
+  const offset = 389.6 - (pct * 389.6);
+  const circle = document.getElementById('examScoreCircle');
+  const color = score >= 14 ? 'var(--accent2)' : score >= 10 ? 'var(--accent)' : 'var(--accent3)';
+  circle.style.stroke = color;
+  setTimeout(() => { circle.style.strokeDashoffset = offset; circle.style.transition = 'stroke-dashoffset 1s ease'; }, 100);
+
+  showScreen('exam-results');
+}
+
+// ==================== STATS ====================
+function renderStats() {
+  const quizzes = state.quizHistory.filter(h => h.type === 'quiz');
+  const avg = calcOverallAvg();
+  document.getElementById('statsAvgScore').textContent = avg !== null ? avg.toFixed(1) : '—';
+  document.getElementById('statsSubtitle').textContent =
+    avg !== null ? `Basé sur ${state.quizHistory.length} quiz et examens` : 'Fais tes premiers quiz pour voir ta progression !';
+
+  // Per-subject stats
+  const subjEl = document.getElementById('subjectStatsList');
+  const hasData = quizzes.length > 0;
+  if (!hasData) {
+    subjEl.innerHTML = `<div class="empty-state" style="padding:20px;"><div class="icon">📊</div><p>Aucune donnée disponible.</p></div>`;
+  } else {
+    subjEl.innerHTML = SUBJECTS.map(s => {
+      const hist = quizzes.filter(h => h.subject === s.id);
+      if (hist.length === 0) return '';
+      const subAvg = hist.reduce((a,b) => a + b.score, 0) / hist.length;
+      const pct = (subAvg / 20) * 100;
+      const color = subAvg >= 14 ? 'var(--accent2)' : subAvg >= 10 ? 'var(--accent)' : 'var(--accent3)';
+      return `<div class="subject-stat-row">
+        <div class="ss-header">
+          <div class="ss-name"><div class="ss-dot" style="background:${s.color}"></div>${s.icon} ${s.name}</div>
+          <div class="ss-score" style="color:${color}">${subAvg.toFixed(1)}/20</div>
+        </div>
+        <div class="ss-bar"><div class="ss-fill" style="width:${pct}%; background:${color};"></div></div>
+        <div class="ss-detail"><span>${hist.length} quiz</span><span>Meilleur: ${Math.max(...hist.map(h=>h.score))}/20</span></div>
+      </div>`;
+    }).filter(Boolean).join('');
+    if (!subjEl.innerHTML) subjEl.innerHTML = `<div class="empty-state" style="padding:20px;"><p>Fais des quiz pour chaque matière.</p></div>`;
+  }
+
+  // Chart
+  drawProgressChart();
+
+  // History
+  const histEl = document.getElementById('statsHistory');
+  if (state.quizHistory.length === 0) {
+    histEl.innerHTML = `<div class="empty-state"><div class="icon">📋</div><h3>Historique vide</h3><p>Tes quiz complétés apparaîtront ici.</p></div>`;
+  } else {
+    const rev = [...state.quizHistory].reverse();
+    histEl.innerHTML = rev.map(h => {
+      const sub = h.type === 'exam' ? { icon: '🎓', name: 'Examen Blanc' } : SUBJECTS.find(s => s.id === h.subject) || { icon:'📝', name: h.subject };
+      const color = h.score >= 14 ? 'var(--accent2)' : h.score >= 10 ? 'var(--accent)' : 'var(--accent3)';
+      return `<div class="history-item">
+        <div class="hi-icon">${sub.icon}</div>
+        <div class="hi-info">
+          <div class="hi-title">${sub.name}</div>
+          <div class="hi-meta">${h.correct}/${h.total} bonnes · ${h.date}</div>
+        </div>
+        <div class="hi-score" style="color:${color}">${h.score}/20</div>
+      </div>`;
+    }).join('');
+  }
+}
+
+function drawProgressChart() {
+  const canvas = document.getElementById('progressChart');
+  const chartEmpty = document.getElementById('chartEmpty');
+  const quizzes = state.quizHistory.filter(h => h.type === 'quiz');
+
+  if (quizzes.length < 2) {
+    canvas.style.display = 'none';
+    chartEmpty.style.display = 'block';
+    return;
+  }
+
+  canvas.style.display = 'block';
+  chartEmpty.style.display = 'none';
+
+  const last10 = quizzes.slice(-10);
+  const ctx = canvas.getContext('2d');
+  const W = canvas.offsetWidth || 300;
+  const H = 160;
+  canvas.width = W;
+  canvas.height = H;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  [5, 10, 15, 20].forEach(v => {
+    const y = H - (v / 20) * (H - 20) - 10;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '10px Space Mono, monospace';
+    ctx.fillText(v, 4, y - 3);
+  });
+
+  // Line
+  const pts = last10.map((q, i) => ({
+    x: (i / (last10.length - 1)) * (W - 20) + 10,
+    y: H - (q.score / 20) * (H - 20) - 10,
+  }));
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, 0, 0, H);
+  grad.addColorStop(0, 'rgba(245,166,35,0.3)');
+  grad.addColorStop(1, 'rgba(245,166,35,0)');
+  ctx.beginPath();
+  ctx.moveTo(pts[0].x, H);
+  pts.forEach(p => ctx.lineTo(p.x, p.y));
+  ctx.lineTo(pts[pts.length-1].x, H);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Line stroke
+  ctx.beginPath();
+  ctx.strokeStyle = 'var(--accent)';
+  ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  pts.forEach((p, i) => i === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y));
+  ctx.stroke();
+
+  // Dots
+  pts.forEach((p, i) => {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = '#F5A623';
+    ctx.fill();
+    ctx.strokeStyle = '#0D1B2E';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  });
+}
+
+// ==================== TOAST ====================
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ==================== MODAL ====================
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('show');
+}
+
+// ==================== INIT ====================
+window.addEventListener('DOMContentLoaded', () => {
+  loadState();
+  setTimeout(() => {
+    document.getElementById('loadingScreen').style.opacity = '0';
+    document.getElementById('loadingScreen').style.transition = 'opacity 0.5s';
+    setTimeout(() => { document.getElementById('loadingScreen').style.display = 'none'; }, 500);
+    showScreen('home');
+  }, 1800);
+});
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+// Prevent scroll bounce on iOS
+document.addEventListener('touchmove', (e) => {
+  if (e.target.closest('.scroll-content, .redac-textarea')) return;
+  e.preventDefault();
+}, { passive: false });
+</script>
+
+<!-- Bottom Navigation -->
+<nav class="bottom-nav">
+  <button class="nav-item active" onclick="showScreen('home')">
+    <span class="nav-icon">🏠</span>
+    <span class="nav-label">Accueil</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('quiz-subjects')">
+    <span class="nav-icon">🧠</span>
+    <span class="nav-label">Quiz</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('redaction')">
+    <span class="nav-icon">✍️</span>
+    <span class="nav-label">Rédaction</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('exam-config')">
+    <span class="nav-icon">🎓</span>
+    <span class="nav-label">Examen</span>
+  </button>
+  <button class="nav-item" onclick="showScreen('stats')">
+    <span class="nav-icon">📊</span>
+    <span class="nav-label">Stats</span>
+  </button>
+</nav>
+
+</body>
+</html>
